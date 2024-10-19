@@ -28,6 +28,8 @@ in
       default = pkgs.systemdMinimal;
     };
 
+    enableStrictShellChecks = lib.mkEnableOption "running shellcheck on the generated scripts for systemd units.";
+
     globalEnvironment = lib.mkOption {
       type =
         with lib.types;
