@@ -20,9 +20,10 @@ in
     "${file}:${toString line}:${toString column}";
 
   makeSystemConfig =
-    {
+    args@{
       modules,
       extraSpecialArgs ? { },
+      pkgs ? null,
     }:
     let
       # Module that sets additional module arguments
@@ -36,7 +37,7 @@ in
         {
           _file = "${self.lib.printAttrPos (builtins.unsafeGetAttrPos "a" { a = null; })}: inline module";
           _module.args = {
-            pkgs = nixpkgs.legacyPackages.${config.nixpkgs.hostPlatform};
+            pkgs = if args.pkgs or null == null then nixpkgs.legacyPackages.${config.nixpkgs.hostPlatform} else args.pkgs;
             utils = import "${nixos}/lib/utils.nix" {
               inherit lib config pkgs;
             };
@@ -58,7 +59,7 @@ in
 
       # Get the system as it was defined in the modules.
       system = config.nixpkgs.hostPlatform;
-      pkgs = nixpkgs.legacyPackages.${system};
+      pkgs = if args.pkgs or null == null then nixpkgs.legacyPackages.${system} else args.pkgs;
 
       returnIfNoAssertions =
         drv:
