@@ -18,9 +18,10 @@ let
       "${file}:${toString line}:${toString column}";
 
     makeSystemConfig =
-      {
+      makeSystemConfigArgs@{
         modules,
         extraSpecialArgs ? { },
+        pkgs ? null,
       }:
       let
         # Module that sets additional module arguments
@@ -34,7 +35,14 @@ let
           {
             _file = "${self.printAttrPos (builtins.unsafeGetAttrPos "a" { a = null; })}: inline module";
             _module.args = {
-              pkgs = import nixpkgs { system = config.nixpkgs.hostPlatform; inherit (config.nixpkgs) config; };
+              pkgs =
+                if makeSystemConfigArgs.pkgs or null != null then
+                  makeSystemConfigArgs.pkgs
+                else
+                  import nixpkgs {
+                    system = config.nixpkgs.hostPlatform;
+                    inherit (config.nixpkgs) config;
+                  };
               utils = import "${nixos}/lib/utils.nix" {
                 inherit lib config pkgs;
               };
