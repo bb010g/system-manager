@@ -97,13 +97,6 @@
         type = types.attrs;
       };
 
-      # No-op option for now.
-      users = lib.mkOption {
-        internal = true;
-        default = { };
-        type = types.attrs;
-      };
-
       networking = {
         enableIPv6 = lib.mkEnableOption "IPv6" // {
           default = true;
