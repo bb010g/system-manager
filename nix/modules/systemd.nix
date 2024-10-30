@@ -145,7 +145,7 @@ in
   config = {
     systemd = {
       targets.system-manager = {
-        wantedBy = [ "default.target" ];
+        wantedBy = [ "multi-user.target" ];
       };
 
       timers = lib.mapAttrs (name: service: {
