@@ -146,7 +146,16 @@ in
   config = {
     systemd = {
       targets.system-manager = {
-        wantedBy = [ "multi-user.target" ];
+        after = [ "system-manager-pre.target" ];
+        description = "Current system-manager activated system";
+        before = [ "multi-user.target" ];
+        upheldBy = [ "multi-user.target" ];
+      };
+
+      targets.system-manager-pre = {
+        description = "Preparation for system-manager activated system";
+        unitConfig.RefuseManualStart = true;
+        unitConfig.StopWhenUnneeded = true;
       };
 
       timers = lib.mapAttrs (name: service: {
@@ -183,6 +192,7 @@ in
 
     environment.etc =
       let
+        inherit (lib) escapeShellArg escapeShellArgs;
         allowCollisions = false;
 
         enabledUnits = lib.filterAttrs (_: unit: unit.enable) cfg.units;
@@ -195,19 +205,19 @@ in
               allowSubstitutes = false;
             }
             ''
-              mkdir -p $out
+              mkdir -p -- "$out"
 
-              for i in ${toString (lib.mapAttrsToList (n: v: v.unit) enabledUnits)}; do
-                fn=$(basename $i/*)
-                if [ -e $out/$fn ]; then
-                  if [ "$(readlink -f $i/$fn)" = /dev/null ]; then
-                    ln -sfn /dev/null $out/$fn
+              for i in ${escapeShellArgs (lib.mapAttrsToList (n: v: v.unit) enabledUnits)}; do
+                fn=$(basename -- "$i"/*)
+                if [ -e "$out/$fn" ]; then
+                  if [ "$(readlink -f -- "$i/$fn")" = /dev/null ]; then
+                    ln -sfn -- /dev/null "$out/$fn"
                   else
                     ${
                       if allowCollisions then
                         ''
-                          mkdir -p $out/$fn.d
-                          ln -s $i/$fn $out/$fn.d/overrides.conf
+                          mkdir -p -- "$out/$fn.d"
+                          ln -s -- "$i/$fn" "$out/$fn.d/overrides.conf"
                         ''
                       else
                         ''
@@ -217,29 +227,29 @@ in
                     }
                   fi
                 else
-                  ln -fs $i/$fn $out/
+                  ln -sft "$out/" -- "$i/$fn"
                 fi
               done
 
-              ${lib.concatStrings (
-                lib.mapAttrsToList (
-                  name: unit:
-                  lib.concatMapStrings (name2: ''
-                    mkdir -p $out/'${name2}.wants'
-                    ln -sfn '../${name}' $out/'${name2}.wants'/
-                  '') (unit.wantedBy or [ ])
-                ) enabledUnits
-              )}
-
-              ${lib.concatStrings (
-                lib.mapAttrsToList (
-                  name: unit:
-                  lib.concatMapStrings (name2: ''
-                    mkdir -p $out/'${name2}.requires'
-                    ln -sfn '../${name}' $out/'${name2}.requires'/
-                  '') (unit.requiredBy or [ ])
-                ) enabledUnits
-              )}
+              ${lib.concatMapStringsSep "\n"
+                (
+                  getUnitDirNames:
+                  lib.concatStrings (
+                    lib.mapAttrsToList (
+                      name: unit:
+                      lib.concatMapStrings (dirName: ''
+                        mkdir -p -- "$out/"${escapeShellArg dirName}
+                        ln -sfnt "$out/"${escapeShellArg dirName}/ -- ../${escapeShellArg name}
+                      '') (getUnitDirNames unit)
+                    ) enabledUnits
+                  )
+                )
+                [
+                  (unit: lib.map (name: "${name}.wants") unit.wantedBy or [ ])
+                  (unit: lib.map (name: "${name}.requires") unit.requiredBy or [ ])
+                  (unit: lib.map (name: "${name}.upholds") unit.upheldBy or [ ])
+                ]
+              }
             '';
       };
   };
