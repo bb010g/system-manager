@@ -12,6 +12,23 @@ let
 in
 {
   options.environment = {
+    extraOutputsToInstall = lib.mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      example = [
+        "doc"
+        "info"
+        "devdoc"
+      ];
+      description = ''
+        Entries listed here will be appended to the `meta.outputsToInstall` attribute for each package in `environment.systemPackages`, and the files from the corresponding derivation outputs symlinked into {file}`/run/system-manager/sw`.
+
+        For example, this can be used to install the `dev` and `info` outputs for all packages in the system environment, if they are available.
+
+        To use specific outputs instead of configuring them globally, select the corresponding attribute on the package derivation, e.g. `libxml2.dev` or `coreutils.info`.
+      '';
+    };
+
     pathsToLink = lib.mkOption {
       type = types.listOf types.str;
       default = [ ];
@@ -67,7 +84,7 @@ in
           pathDrv = pkgs.buildEnv {
             name = "system-manager-path";
             paths = config.environment.systemPackages;
-            inherit (config.environment) pathsToLink;
+            inherit (config.environment) extraOutputsToInstall pathsToLink;
           };
         in
         ''
