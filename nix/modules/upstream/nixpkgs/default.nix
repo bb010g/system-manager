@@ -1,8 +1,12 @@
 {
-  nixosModulesPath,
   lib,
+  nixosModulesPath,
+  pkgs,
   ...
 }:
+let
+  inherit (lib) types;
+in
 {
   imports =
     [
@@ -14,6 +18,7 @@
     map (path: nixosModulesPath + path) [
       "/misc/meta.nix"
       "/security/acme/"
+      "/security/wrappers/"
       "/services/web-servers/nginx/"
     ];
 
@@ -24,7 +29,15 @@
     # to inform users that they need to be enabled in the host system?
     {
       boot = lib.mkOption {
-        type = lib.types.raw;
+        type = types.raw;
+      };
+      security.apparmor = {
+        includes = lib.mkOption {
+          type = types.attrsOf types.lines;
+          default = { };
+          internal = true;
+          apply = lib.mapAttrs pkgs.writeText;
+        };
       };
     };
 
