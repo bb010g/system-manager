@@ -110,6 +110,18 @@
         };
       };
 
+      system.checks = lib.mkOption {
+        type = types.listOf types.package;
+        default = [ ];
+        description = ''
+          Packages that are added as dependencies of the system's build, usually
+          for the purpose of validating some part of the configuration.
+
+          Unlike `system.extraDependencies`, these store paths do not
+          become part of the built system configuration.
+        '';
+      };
+
       system-manager = {
         allowAnyDistro = lib.mkEnableOption "the usage of system-manager on untested distributions";
 

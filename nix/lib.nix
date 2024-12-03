@@ -111,8 +111,21 @@ let
               };
             };
 
+            attrsOverlays.addPassedChecks =
+              finalAttrs: prevAttrs:
+              let
+                inherit (finalAttrs.passthru.evaluation) config;
+                prevPassedChecks = prevAttrs.passedChecks or "";
+              in
+              {
+                passedChecks = lib.concatStringsSep " " (
+                  lib.optionals (prevPassedChecks != "") prevPassedChecks ++ config.system.checks
+                );
+              };
+
             attrsOverlay = lib.composeManyExtensions [
               attrsOverlays.addPassthru
+              attrsOverlays.addPassedChecks
             ];
           in
           (pkgs.linkFarm "system-manager" entries).overrideAttrs attrsOverlay;
