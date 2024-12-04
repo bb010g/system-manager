@@ -1,9 +1,10 @@
 {
   nixpkgs ? <nixpkgs>,
-  lib ? import "${nixpkgs}/lib",
-  nixos ? "${nixpkgs}/nixos",
+  lib ? import (nixpkgs + "/lib"),
+  nixos ? nixpkgs + "/nixos",
 }:
 let
+  inherit (builtins) map throw toString;
   self = {
     # Function that can be used when defining inline modules to get better location
     # reporting in module-system errors.
@@ -43,7 +44,7 @@ let
                     system = config.nixpkgs.hostPlatform;
                     inherit (config.nixpkgs) config;
                   };
-              utils = import "${nixos}/lib/utils.nix" {
+              utils = import (nixos + "/lib/utils.nix") {
                 inherit lib config pkgs;
               };
               # Pass the wrapped system-manager binary down
@@ -56,7 +57,8 @@ let
 
         evaluation = lib.evalModules {
           specialArgs = {
-            nixosModulesPath = "${nixos}/modules";
+            modulesPath = throw "system-manager: Special argument `modulesPath` is not currently supported. Use `nixosModulesPath` instead.";
+            nixosModulesPath = toString (nixos + "/modules");
           } // extraSpecialArgs;
           modules = [
             extraArgsModule
