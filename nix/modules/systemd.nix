@@ -1,12 +1,13 @@
 {
-  lib,
   config,
+  lib,
   pkgs,
   utils,
   ...
 }:
 
 let
+  inherit (lib) types;
   cfg = config.systemd;
 
   inherit (utils) systemdUtils;
@@ -20,24 +21,24 @@ in
     # We could consider copying the systemd lib from NixOS and removing the bits
     # that are not relevant to us, like this option.
     package = lib.mkOption {
-      type = lib.types.oneOf [
-        lib.types.str
-        lib.types.path
-        lib.types.package
+      type = types.oneOf [
+        types.str
+        types.path
+        types.package
       ];
       default = pkgs.systemdMinimal;
     };
 
     globalEnvironment = lib.mkOption {
-      type =
-        with lib.types;
-        attrsOf (
-          nullOr (oneOf [
-            str
-            path
-            package
-          ])
-        );
+      type = types.attrsOf (
+        types.nullOr (
+          types.oneOf [
+            types.str
+            types.path
+            types.package
+          ]
+        )
+      );
       default = { };
       example = {
         TZ = "CET";
@@ -57,7 +58,7 @@ in
 
     packages = lib.mkOption {
       default = [ ];
-      type = lib.types.listOf lib.types.package;
+      type = types.listOf types.package;
       example = lib.literalExpression "[ pkgs.systemd-cryptsetup-generator ]";
       description = lib.mdDoc "Packages providing systemd units and hooks.";
     };
@@ -119,7 +120,7 @@ in
     };
 
     generators = lib.mkOption {
-      type = lib.types.attrsOf lib.types.path;
+      type = types.attrsOf types.path;
       default = { };
       example = {
         systemd-gpt-auto-generator = "/dev/null";
@@ -132,7 +133,7 @@ in
     };
 
     shutdown = lib.mkOption {
-      type = lib.types.attrsOf lib.types.path;
+      type = types.attrsOf types.path;
       default = { };
       description = lib.mdDoc ''
         Definition of systemd shutdown executables.
