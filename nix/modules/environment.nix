@@ -29,20 +29,16 @@
         ];
 
         etc = {
-          "profile.d/system-manager-path.sh".source = pkgs.writeText "system-manager-path.sh" ''
-            export PATH=${pathDir}/bin/:''${PATH}
-          '';
-
           # TODO: figure out how to properly add fish support. We could start by
           # looking at what NixOS and HM do to set up the fish env.
-          #"fish/conf.d/system-manager-path.fish".source =
-          #  pkgs.writeTextFile {
-          #    name = "system-manager-path.fish";
-          #    executable = true;
-          #    text = ''
-          #      set -gx PATH "${pathDir}/bin/" $PATH
-          #    '';
-          #  };
+          #"fish/conf.d/system-manager-path.fish".text = ''
+          #  set -gx PATH "${pathDir}/bin/" $PATH
+          #'';
+          #"fish/conf.d/system-manager-path.fish".executable = true;
+
+          "profile.d/system-manager-path.sh".text = ''
+            export PATH=${pathDir}/bin/:''${PATH}
+          '';
         };
       };
 

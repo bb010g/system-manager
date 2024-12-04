@@ -39,6 +39,8 @@
                 '';
               };
 
+              executable = lib.mkEnableOption "execution bits for this file";
+
               target = lib.mkOption {
                 type = lib.types.str;
                 description = lib.mdDoc ''
@@ -113,9 +115,19 @@
               target = lib.mkDefault name;
               source = lib.mkIf (config.text != null) (
                 let
+                  inherit (config) executable;
                   name' = "etc-" + baseNameOf name;
                 in
-                lib.mkDerivedConfig options.text (pkgs.writeText name')
+                lib.mkDerivedConfig options.text (
+                  if executable then
+                    text:
+                    pkgs.writeTextFile {
+                      name = name';
+                      inherit executable text;
+                    }
+                  else
+                    pkgs.writeText name'
+                )
               );
             };
           }
