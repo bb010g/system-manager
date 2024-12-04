@@ -46,17 +46,17 @@ let
             };
           };
 
-        config =
-          (lib.evalModules {
-            specialArgs = {
-              nixosModulesPath = "${nixos}/modules";
-            } // extraSpecialArgs;
-            modules = [
-              extraArgsModule
-              ./modules
-            ] ++ modules;
-          }).config;
+        evaluation = lib.evalModules {
+          specialArgs = {
+            nixosModulesPath = "${nixos}/modules";
+          } // extraSpecialArgs;
+          modules = [
+            extraArgsModule
+            ./modules
+          ] ++ modules;
+        };
 
+        inherit (evaluation) config;
         inherit (config.nixpkgs) pkgs;
 
         returnIfNoAssertions =
@@ -101,7 +101,7 @@ let
               drv:
               drv.overrideAttrs (prevAttrs: {
                 passthru = (prevAttrs.passthru or { }) // {
-                  inherit config;
+                  inherit config evaluation;
                 };
               });
           in
