@@ -105,15 +105,17 @@ let
               (linkFarmEntryFromDrv etcPath)
             ] ++ scripts;
 
-            addPassthru =
-              drv:
-              drv.overrideAttrs (prevAttrs: {
-                passthru = (prevAttrs.passthru or { }) // {
-                  inherit config evaluation;
-                };
-              });
+            attrsOverlays.addPassthru = finalAttrs: prevAttrs: {
+              passthru = (prevAttrs.passthru or { }) // {
+                inherit config evaluation;
+              };
+            };
+
+            attrsOverlay = lib.composeManyExtensions [
+              attrsOverlays.addPassthru
+            ];
           in
-          addPassthru (pkgs.linkFarm "system-manager" entries);
+          (pkgs.linkFarm "system-manager" entries).overrideAttrs attrsOverlay;
       in
       returnIfNoAssertions toplevel;
 
