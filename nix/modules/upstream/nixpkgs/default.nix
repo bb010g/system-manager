@@ -1,6 +1,6 @@
 {
   lib,
-  nixosModulesPath,
+  modulesPaths,
   pkgs,
   ...
 }:
@@ -15,11 +15,11 @@ in
     ++
     # List of imported NixOS modules
     # TODO: how will we manage this in the long term?
-    map (path: nixosModulesPath + path) [
+    map (path: modulesPaths.nixos + path) [
       "/misc/meta.nix"
-      "/security/acme/"
-      "/security/wrappers/"
-      "/services/web-servers/nginx/"
+      "/security/acme"
+      "/security/wrappers"
+      "/services/web-servers/nginx"
     ];
 
   options =

@@ -5,6 +5,7 @@
 }:
 let
   inherit (builtins) map throw toString;
+  _file = ./lib.nix;
   self = {
     # Function that can be used when defining inline modules to get better location
     # reporting in module-system errors.
@@ -28,13 +29,15 @@ let
         # Module that sets additional module arguments
         extraArgsModule =
           {
-            lib,
             config,
+            lib,
+            modulesPaths,
             pkgs,
             ...
           }:
           {
-            _file = "${self.printAttrPos (builtins.unsafeGetAttrPos "a" { a = null; })}: inline module";
+            inherit _file;
+            key = "${modulesPaths.system-manager}:extraArgsModule";
             _module.args = {
               pkgs =
                 if makeSystemConfigArgs.pkgs or null != null then
@@ -55,14 +58,42 @@ let
             };
           };
 
+        # Module that imports the default module.
+        # Necessary to use `modulesPaths.system-manager`.
+        defaultModule =
+          { modulesPaths, ... }:
+          {
+            inherit _file;
+            key = "${modulesPaths.system-manager}:defaultModule";
+            imports = [ (modulesPaths.system-manager + "/default.nix") ];
+          };
+
+        modulesPaths = {
+          nixos = toString (nixos + "/modules");
+          system-manager = toString ./modules;
+        } // extraSpecialArgs.modulesPaths or { };
+
         evaluation = lib.evalModules {
-          specialArgs = {
-            modulesPath = throw "system-manager: Special argument `modulesPath` is not currently supported. Use `nixosModulesPath` instead.";
-            nixosModulesPath = toString (nixos + "/modules");
-          } // extraSpecialArgs;
+          specialArgs = extraSpecialArgs // {
+            inherit modulesPaths;
+            ${
+              lib.warnIf (extraSpecialArgs ? modulesPath)
+                "makeSystemConfig: Special argument `modulesPath` is unsupported. Using provided `specialArgs.modulesPath` anyways."
+                "modulesPath"
+            } =
+              extraSpecialArgs.modulesPath
+                or (throw "makeSystemConfig: Special argument `modulesPath` is unsupported. Please use `modulesPaths.nixos` or `modulesPaths.system-manager` instead.");
+            ${
+              lib.warnIf (extraSpecialArgs ? nixosModulesPath)
+                "makeSystemConfig: Special argument `nixosModulesPath` is unsupported. Using `specialArgs.nixosModulesPath` anyways."
+                "nixosModulesPath"
+            } =
+              extraSpecialArgs.nixosModulesPath
+                or (throw "makeSystemConfig: Special argument `nixosModulesPath` has been removed. Please use `modulesPaths.nixos` instead.");
+          };
           modules = [
             extraArgsModule
-            ./modules
+            defaultModule
           ] ++ modules;
         };
 
